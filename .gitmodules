@@ -1,0 +1,3 @@
+[submodule "extern/imnodes"]
+	path = HTNVisualizer/extern/imnodes
+	url = https://github.com/Nelarius/imnodes.git

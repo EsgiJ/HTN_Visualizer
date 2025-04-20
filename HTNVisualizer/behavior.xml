@@ -1,0 +1,19 @@
+<HTN>
+	<Method name="Combat">
+		<Selector>
+			<Task name="EngageEnemy">
+				<Sequence>
+					<Condition name="EnemyVisible"/>
+					<Task name="Attack">
+						<Action name="Aim"/>
+						<Action name="Shoot"/>
+					</Task>
+				</Sequence>
+			</Task>
+			<Task name="Retreat">
+				<Action name="FindCover"/>
+				<Action name="Regroup"/>
+			</Task>
+		</Selector>
+	</Method>
+</HTN>
