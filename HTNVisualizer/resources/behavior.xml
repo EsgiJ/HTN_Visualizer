@@ -1,0 +1,38 @@
+<HTN>
+  <Task name="RootTask">
+    <Task name="Exploration">
+      <Property name="Priority" value="High"/>
+      <Task name="ScanArea">
+        <Property name="ScanRadius" value="500.0"/>
+      </Task>
+      <Task name="MoveToNextZone">
+        <Property name="Speed" value="150.0"/>
+      </Task>
+    </Task>
+    <Task name="Combat">
+      <Property name="EngagementRange" value="300.0"/>
+      <Task name="FireWeapon">
+        <Property name="WeaponType" value="Laser"/>
+        <Property name="AmmoCost" value="5"/>
+      </Task>
+    </Task>
+    <Task name="ResourceCollection">
+      <Property name="ResourceType" value="Energy"/>
+      <Task name="LocateResource">
+        <Property name="ScanDepth" value="100.0"/>
+      </Task>
+      <Task name="CollectResource">
+        <Property name="Efficiency" value="0.9"/>
+      </Task>
+    </Task>
+    <Task name="SupportAlly">
+      <Property name="SupportType" value="Heal"/>
+      <Task name="NavigateToAlly">
+        <Property name="Pathfinding" value="AStar"/>
+      </Task>
+      <Task name="PerformSupportAction">
+        <Property name="HealAmount" value="50"/>
+      </Task>
+    </Task>
+  </Task>
+</HTN>
