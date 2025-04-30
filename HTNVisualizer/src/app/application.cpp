@@ -112,7 +112,9 @@ namespace HTN::App
 			}
 
 			DrawTreeNode();
+			GetSelectedNode();
 			DrawNodeProperties();
+
 			//ImGui::GetWindowDrawList()->PopClipRect();
 			ImGui::End();
 
@@ -270,9 +272,62 @@ namespace HTN::App
 	{
 		if (ImGui::Begin("Node Properties", nullptr, ImGuiWindowFlags_NoCollapse))
 		{
+			if (m_SelectedNode)
+			{
+				ImGui::PushItemWidth(-1);
+				ImGui::Text("Node Type: %s", HTN::Core::NodeTypeToString(m_SelectedNode->type).c_str());
+				ImGui::Text("Node Name: %s", m_SelectedNode->name.c_str());
+				ImGui::Separator();
+
+				//Property list
+				ImGui::Text(("Properties:"));
+				ImGui::Indent();
+				for (const auto& [key, value]: m_SelectedNode->properties)
+				{
+					ImGui::Text("%s: %s", key.c_str(), value.c_str());
+					ImGui::Separator();
+				}
+			}
+			else
+			{
+				ImGui::Text("Select a node to view properties");
+			}
 			ImGui::End();
 		}
 
+	}
+
+	void Application::GetSelectedNode()
+	{
+		ImVec2 mousePos = ImGui::GetMousePos();
+		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
+		{
+			m_SelectedNode = nullptr;
+
+			for (auto& [depth, nodePtrs] : m_Parser.depthMap)
+			{
+				for (auto& nodePtr : nodePtrs)
+				{
+					ImVec2 nodePos = {
+						nodePtr->position.x * m_Zoom + m_ViewOffset.x,
+						nodePtr->position.y * m_Zoom + m_ViewOffset.y
+					};
+
+					ImVec2 nodeSize = {
+						nodePtr->size.x * m_Zoom,
+						nodePtr->size.y * m_Zoom
+					};
+
+					if (mousePos.x >= nodePos.x && mousePos.x <= nodePos.x + nodeSize.x &&
+						mousePos.y >= nodePos.y && mousePos.y <= nodePos.y + nodeSize.y)
+					{
+						m_SelectedNode = nodePtr.get();
+						break;
+					}
+				}
+				if (m_SelectedNode) break;
+			}
+		}
 	}
 
 	std::string Application::GetResourcePath(const std::string& resourceFile)

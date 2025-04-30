@@ -23,6 +23,7 @@ namespace HTN::App
 		void DrawTreeNode();
 		void DrawTreeNodeRecursive(const HTN::Core::Node* node);
 		void DrawNodeProperties();
+		void GetSelectedNode();
 
 		std::string GetResourcePath(const std::string& resourceFile);
 

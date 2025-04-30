@@ -36,10 +36,19 @@ namespace HTN::Core
 		node->name = elem->Attribute("name") ? elem->Attribute("name") : "";
 		node->position = ImVec2(x, y + depth * 150.0f);
 
-		// Properties
+		
 		for (const auto* attr = elem->FirstAttribute(); attr; attr = attr->Next()) {
 			if (strcmp(attr->Name(), "name") != 0)
 				node->properties[attr->Name()] = attr->Value();
+		}
+
+		for (auto* prop = elem->FirstChildElement("Property"); prop; prop = prop->NextSiblingElement("Property")) {
+			const char* propName = prop->Attribute("name");
+			const char* propValue = prop->Attribute("value");
+			if (propName && propValue) {
+				node->properties[propName] = propValue;
+				std::cout << "Element Property - Name:" << propName << " Value: " << propValue << std::endl;
+			}
 		}
 
 		depthMap[depth].push_back(std::move(node));
