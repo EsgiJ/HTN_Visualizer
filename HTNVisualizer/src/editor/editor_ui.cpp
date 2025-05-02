@@ -6,29 +6,48 @@
 #include <iostream>
 #include <algorithm>
 #include "htn/editor/editor_ui.h"
+#include "htn/editor/theme_manager.h"
 
 
-void HTN::Editor::EditorUI::DrawGrid(const ImVec2& canvasSize, ImVec2 ViewOffset, float Zoom)
+
+void HTN::Editor::EditorUI::DrawGrid(const ImVec2& canvasSize, ImVec2 viewOffset, float zoom)
 {
 	ImDrawList* drawList = ImGui::GetWindowDrawList();
 
-	const float gridStep = 32.0f;
-	const ImColor gridColor = ImColor(60, 60, 60, 100);
-	const float gridThickness = 2.0f * Zoom;
+	auto colors = HTN::Editor::ThemeManager::GetColors();
 
-	ImVec2 windowPos = ImGui::GetWindowPos();
-	ImVec2 windowSize = ImGui::GetWindowSize();
+	const float gridStep = 32.0f * zoom;
+	const ImColor gridColor = colors.grid;
+	const float gridThickness = 1.0f;
 
-	ImVec2 origin = ImGui::GetCursorScreenPos();
-	for (float x = fmodf(windowPos.x, gridStep); x < windowSize.x; x += gridStep)
+	ImVec2 canvasOrigin = ImGui::GetCursorScreenPos();
+
+	ImVec2 startPos = ImVec2(
+		fmodf(viewOffset.x, gridStep),
+		fmodf(viewOffset.y, gridStep)
+	);
+
+	for (float x = startPos.x; x < canvasSize.x; x += gridStep)
 	{
-		drawList->AddLine(ImVec2(x, 0), ImVec2(x, windowSize.y), gridColor);
+		drawList->AddLine(
+			ImVec2(canvasOrigin.x + x, canvasOrigin.y),
+			ImVec2(canvasOrigin.x + x, canvasOrigin.y + canvasSize.y),
+			gridColor,
+			gridThickness
+		);
 	}
-	for (float y = fmodf(windowPos.y, gridStep); y < windowSize.y; y += gridStep)
+
+	for (float y = startPos.y; y < canvasSize.y; y += gridStep)
 	{
-		drawList->AddLine(ImVec2(0, y), ImVec2(windowSize.x, y), gridColor);
+		drawList->AddLine(
+			ImVec2(canvasOrigin.x, canvasOrigin.y + y),
+			ImVec2(canvasOrigin.x + canvasSize.x, canvasOrigin.y + y),
+			gridColor,
+			gridThickness
+		);
 	}
 }
+
 
 void HTN::Editor::EditorUI::DrawNode(HTN::Core::Node& node, ImVec2 ViewOffset, float Zoom)
 {
@@ -36,7 +55,9 @@ void HTN::Editor::EditorUI::DrawNode(HTN::Core::Node& node, ImVec2 ViewOffset, f
 	const std::string& nodeType = HTN::Core::NodeTypeToString(node.type);
 
 	//HTN::Core::GetNodeColor(node.type);  
-	const ImColor bodyColor(50, 50, 50, 255);
+	auto colors = HTN::Editor::ThemeManager::GetColors();
+
+	const ImColor bodyColor = colors.nodeBackground;
 	const ImColor pinColor(30, 30, 30, 255);
 	const ImColor borderColor(100, 100, 100, 200);
 	const ImColor labelBgColor = HTN::Core::GetNodeColor(node.type);
@@ -166,8 +187,10 @@ void HTN::Editor::EditorUI::DrawLink(const HTN::Core::Link& link, const std::uno
 
 	if (!startNode || !endNode) return;
 
+	auto colors = HTN::Editor::ThemeManager::GetColors();
+
 	ImDrawList* drawList = ImGui::GetWindowDrawList();
-	const ImColor linkColor = ImColor(255, 255, 255, 200);
+	const ImColor linkColor = colors.link;
 	const float linkThickness = 4.0f * Zoom; 
 	const float arrowSize = 16.0f * Zoom;    
 

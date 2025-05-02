@@ -24,7 +24,9 @@ namespace HTN::App
 		void DrawTreeNodeRecursive(const HTN::Core::Node* node);
 		void DrawNodeProperties();
 		void GetSelectedNode();
-
+		void FocusNode(const HTN::Core::Node* node);
+		bool IsSearchMatch(const std::string& nodeName) const;
+		bool HasMatchingChildRecursive(const HTN::Core::Node* node) const;
 		std::string GetResourcePath(const std::string& resourceFile);
 
 		GLFWwindow* m_Window = nullptr;
@@ -32,6 +34,9 @@ namespace HTN::App
 		HTN::Editor::EditorUI m_EditorUI;
 		HTN::XML::XMLGenerator m_XMLGenerator;
 
+		ImVec2 m_CanvasSize{ 1920, 1080 };
+		ImVec2 m_CanvasPosition{ 0, 0 };
+		char m_NodeSearchBuffer[128] = "";
 		float m_Zoom = 1.0f;
 		ImVec2 m_ViewOffset{ 0, 0 };
 		bool m_IsDraggingView = false;

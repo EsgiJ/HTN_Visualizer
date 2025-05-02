@@ -52,6 +52,7 @@ target_include_directories(HTNVisualizer PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/extern/imgui/backends
     ${CMAKE_CURRENT_SOURCE_DIR}/extern/imgui-node-editor
     ${CMAKE_CURRENT_SOURCE_DIR}/extern/tinyxml2
+    ${CMAKE_CURRENT_SOURCE_DIR}/extern/IconFontCppHeaders
 )
 
 # Link kütüphaneleri

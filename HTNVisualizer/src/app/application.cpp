@@ -3,15 +3,18 @@
 #include <imgui_impl_opengl3.h>
 #include <algorithm>
 #include <iostream>
+#include <sstream>
 
 #include "htn/editor/editor_ui.h"
+#include "htn/editor/imgui_utils.h"
 #include "htn/app/application.h"
+#include "htn/editor/theme_manager.h"
 
 namespace HTN::App
 {
 	bool Application::Initialize()
 	{
-		m_XMLGenerator.Run();
+		//m_XMLGenerator.Run();
 
 		// GLFW init
 		if (!glfwInit()) return false;
@@ -32,10 +35,7 @@ namespace HTN::App
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
 		// Style setup
-		ImGui::StyleColorsDark();
-		ImGuiStyle& style = ImGui::GetStyle();
-		style.WindowRounding = 5.0f;
-		style.FrameRounding = 3.0f;
+		SetupImGuiStyle(false, 1.0f);
 
 		// Platform/Renderer backends
 		ImGui_ImplGlfw_InitForOpenGL(m_Window, true);
@@ -66,29 +66,30 @@ namespace HTN::App
 			ImGui::Begin("HTN Editor", nullptr,
 				ImGuiWindowFlags_NoScrollbar |
 				ImGuiWindowFlags_NoScrollWithMouse);
-			// Canvas setup
-			ImVec2 canvasPos = ImGui::GetCursorScreenPos();
-			ImVec2 canvasSize = ImGui::GetContentRegionAvail();
 
-			if (canvasSize.x <= 0 || canvasSize.y <= 0) {
-				canvasSize = ImVec2(1920, 1080); // Fallback size
-			}
 
-			ImGui::SetCursorPos(ImVec2(0, 0));
-			ImGui::InvisibleButton("canvas", canvasSize,
+			ImGui::InvisibleButton("canvas", m_CanvasSize,
 				ImGuiButtonFlags_MouseButtonLeft |
 				ImGuiButtonFlags_MouseButtonRight | 
 				ImGuiButtonFlags_MouseButtonMiddle
 			);
 
+			// Canvas setup
+			ImVec2 m_CanvasSize = ImGui::GetContentRegionAvail();
+			if (m_CanvasSize.x <= 0 || m_CanvasSize.y <= 0) {
+				m_CanvasSize = ImVec2(1920, 1080); // Fallback size
+			}
+			ImVec2 m_CanvasPosition = ImGui::GetCursorScreenPos();
+
+			ImGui::SetCursorPos(ImVec2(0, 0));
 			ImGui::SetWindowFontScale(m_Zoom);
 			/*ImGui::GetWindowDrawList()->PushClipRect(
 				ImGui::GetCursorScreenPos(),
-				ImVec2(ImGui::GetCursorScreenPos().x + canvasSize.x, ImGui::GetCursorScreenPos().y + canvasSize.y)
+				ImVec2(ImGui::GetCursorScreenPos().x + m_CanvasSize.x, ImGui::GetCursorScreenPos().y + m_CanvasSize.y)
 			);*/
 
 			// Grid drawing
-			m_EditorUI.DrawGrid(canvasSize, m_ViewOffset, m_Zoom);
+			m_EditorUI.DrawGrid(m_CanvasSize, m_ViewOffset, m_Zoom);
 
 			if (m_FirstFrame)
 			{
@@ -161,6 +162,18 @@ namespace HTN::App
 				}
 				ImGui::EndMenu();
 			}
+			if (ImGui::BeginMenu("View"))
+			{
+				if (ImGui::MenuItem("Dark Theme"))
+				{
+					HTN::Editor::ThemeManager::ApplyTheme(HTN::Editor::Theme::Dark);
+				}
+				if (ImGui::MenuItem("Light Theme"))
+				{
+					HTN::Editor::ThemeManager::ApplyTheme(HTN::Editor::Theme::Light);
+				}
+				ImGui::EndMenu();
+			}
 			ImGui::EndMainMenuBar();
 		}
 	}
@@ -204,7 +217,7 @@ namespace HTN::App
 		const float nodeWidth = 200.0f;
 		const float horizontalSpacing = 50.0f;
 		const float verticalSpacing = 200.0f;
-		const float canvasWidth = ImGui::GetWindowWidth();
+		const float canvasWidth = m_CanvasSize.x;
 
 		float currentY = 50.0f;
 
@@ -227,8 +240,12 @@ namespace HTN::App
 
 	void Application::DrawTreeNode()
 	{
-		if (ImGui::Begin("Node Hierarchy", nullptr, ImGuiWindowFlags_NoCollapse))
+		ImGui::SetNextWindowSizeConstraints(ImVec2(250, 200), ImVec2(FLT_MAX, FLT_MAX));
+		if (ImGui::Begin("Node Hierarchy", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysVerticalScrollbar))
 		{
+			ImGui::Text("Search:");
+			ImGui::SameLine();
+			ImGui::InputText("##NodeSearch", m_NodeSearchBuffer, IM_ARRAYSIZE(m_NodeSearchBuffer));
 			HTN:Core::Node* rootNode = m_Parser.rootNode;
 			DrawTreeNodeRecursive(rootNode);
 			ImGui::End();
@@ -237,20 +254,23 @@ namespace HTN::App
 
 	void Application::DrawTreeNodeRecursive(const HTN::Core::Node* node)
 	{
-		if (!node)
-		{
-			return;
-		}
+		if (!node) return;
+
+		if (!HasMatchingChildRecursive(node)) return;
 
 		ImGui::PushID(node->id);
 		ImGuiTreeNodeFlags flags = node->children.empty() ? ImGuiTreeNodeFlags_Leaf : ImGuiTreeNodeFlags_OpenOnArrow;
+		flags |= ImGuiTreeNodeFlags_DefaultOpen;
 
 		bool isOpen = ImGui::TreeNodeEx(node->name.c_str(), flags);
 
+		std::stringstream ss;
+		ss << "Focus##" << node->id;
+
 		ImGui::SameLine();
-		if (ImGui::SmallButton("Focus"))
+		if (ImGui::SmallButton(ss.str().c_str()))
 		{
-			//FocusNode(node);
+			FocusNode(node);
 		}
 
 		if (isOpen)
@@ -270,7 +290,8 @@ namespace HTN::App
 
 	void Application::DrawNodeProperties()
 	{
-		if (ImGui::Begin("Node Properties", nullptr, ImGuiWindowFlags_NoCollapse))
+		ImGui::SetNextWindowSizeConstraints(ImVec2(250, 200), ImVec2(FLT_MAX, FLT_MAX));
+		if (ImGui::Begin("Node Properties", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_AlwaysVerticalScrollbar))
 		{
 			if (m_SelectedNode)
 			{
@@ -303,7 +324,6 @@ namespace HTN::App
 		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left))
 		{
 			m_SelectedNode = nullptr;
-
 			for (auto& [depth, nodePtrs] : m_Parser.depthMap)
 			{
 				for (auto& nodePtr : nodePtrs)
@@ -328,6 +348,51 @@ namespace HTN::App
 				if (m_SelectedNode) break;
 			}
 		}
+	}
+
+	void Application::FocusNode(const HTN::Core::Node* node) {
+		if (!node) return;
+
+		ImVec2 canvasCenter(
+			m_CanvasPosition.x + m_CanvasSize.x * 0.5f,
+			m_CanvasPosition.y + m_CanvasSize.y * 0.5f
+		);
+
+		ImVec2 nodeCenter(
+			node->position.x + node->size.x * 0.5f,
+			node->position.y + node->size.y * 0.5f
+		);
+
+		m_ViewOffset.x = (canvasCenter.x - m_CanvasPosition.x) - (nodeCenter.x * m_Zoom);
+		m_ViewOffset.y = (canvasCenter.y - m_CanvasPosition.y) - (nodeCenter.y * m_Zoom);
+	}
+
+	bool Application::IsSearchMatch(const std::string& nodeName) const
+	{
+		// If the search string is empty, match everything
+		if (strlen(m_NodeSearchBuffer) == 0) return true;
+
+		std::string nodeNameLower = nodeName;
+		std::string searchLower = m_NodeSearchBuffer;
+
+		std::transform(nodeNameLower.begin(), nodeNameLower.end(), nodeNameLower.begin(), ::tolower);
+		std::transform(searchLower.begin(), searchLower.end(), searchLower.begin(), ::tolower);
+
+		return nodeNameLower.find(searchLower) != std::string::npos;
+	}
+
+	bool Application::HasMatchingChildRecursive(const HTN::Core::Node* node) const
+	{
+		if (!node) return false;
+
+		if (IsSearchMatch(node->name)) return true;
+
+		for (const auto& childNode: node->children)
+		{
+			if (HasMatchingChildRecursive(childNode)) return true;
+		}
+
+		return false;
 	}
 
 	std::string Application::GetResourcePath(const std::string& resourceFile)

@@ -1,3 +1,6 @@
 [submodule "extern/imnodes"]
 	path = HTNVisualizer/extern/imnodes
 	url = https://github.com/Nelarius/imnodes.git
+[submodule "HTNVisualizer/extern/extern/IconFontCppHeaders"]
+	path = HTNVisualizer/extern/extern/IconFontCppHeaders
+	url = https://github.com/juliettef/IconFontCppHeaders
