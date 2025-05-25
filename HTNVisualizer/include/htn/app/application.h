@@ -19,7 +19,9 @@ namespace HTN::App
 	private:
 		void DrawMenuBar();
 		void HandleInput();
+		float LayoutNodeRecursive(HTN::Core::Node* node, float depth);
 		void AutoArrangeNodes();
+		void DrawMinimap();
 		void DrawTreeNode();
 		void DrawTreeNodeRecursive(const HTN::Core::Node* node);
 		void DrawNodeProperties();
@@ -38,11 +40,18 @@ namespace HTN::App
 		ImVec2 m_CanvasPosition{ 0, 0 };
 		char m_NodeSearchBuffer[128] = "";
 		float m_Zoom = 1.0f;
+		float m_MinimapZoom = 0.1f;
 		ImVec2 m_ViewOffset{ 0, 0 };
 		bool m_IsDraggingView = false;
 		ImVec2 m_LastMousePosition{ 0, 0 };
 		bool m_IsDragging = false;
 		bool m_FirstFrame = true;
+
+		float m_NodeWidth = 200.0f;
+		float m_HorizontalSpacing = 50.0f;
+		float m_VerticalSpacing = 200.0f;
+		float m_LayoutCursorX = 0.0f;
+
 		HTN::Core::Node* m_SelectedNode = nullptr;
 	};
 }

@@ -102,17 +102,18 @@ namespace HTN::App
 			{
 				for (auto& nodePtr: nodePtrs)
 				{
-					m_EditorUI.DrawNode(*nodePtr, m_ViewOffset, m_Zoom);
+					m_EditorUI.DrawNode(*nodePtr, m_ViewOffset, m_Zoom, false);
 					//m_EditorUI.HandleNodeInteraction(nodePtr, m_ViewOffset, m_SelectedNodes);
 				}
 			}
 
 			// Link drawing
 			for (const auto& link : m_Parser.links) {
-				m_EditorUI.DrawLink(link, m_Parser.depthMap, m_ViewOffset, m_Zoom);
+				m_EditorUI.DrawLink(link, m_Parser.depthMap, m_ViewOffset, m_Zoom, false);
 			}
 
 			DrawTreeNode();
+			DrawMinimap();
 			GetSelectedNode();
 			DrawNodeProperties();
 
@@ -180,19 +181,41 @@ namespace HTN::App
 
 	void HTN::App::Application::HandleInput()
 	{
-		//Zoom In/Out
 		ImGuiIO& io = ImGui::GetIO();
-		if (io.WantCaptureMouse)
+
+		// Zoom In/Out when not hovering any ImGui window
+		if (io.WantCaptureMouse && ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow))
 		{
 			float zoomDelta = io.MouseWheel * 0.1f;
-			if (zoomDelta != 0)
+			if (zoomDelta != 0.0f)
 			{
+				ImVec2 mousePos = ImGui::GetMousePos();
+
+				// Calculate mouse position in world space before zoom
+				ImVec2 beforeZoomWorldPos;
+				beforeZoomWorldPos.x = (mousePos.x - m_ViewOffset.x) / m_Zoom;
+				beforeZoomWorldPos.y = (mousePos.y - m_ViewOffset.y) / m_Zoom;
+
+				// Apply zoom delta
 				m_Zoom += zoomDelta;
 				m_Zoom = std::clamp(m_Zoom, 0.3f, 3.0f);
+
+				// Calculate new screen position of the same world point after zoom
+				ImVec2 afterZoomScreenPos;
+				afterZoomScreenPos.x = beforeZoomWorldPos.x * m_Zoom + m_ViewOffset.x;
+				afterZoomScreenPos.y = beforeZoomWorldPos.y * m_Zoom + m_ViewOffset.y;
+
+				// Calculate the difference and adjust view offset to keep mouse position stable
+				ImVec2 zoomFixOffset;
+				zoomFixOffset.x = mousePos.x - afterZoomScreenPos.x;
+				zoomFixOffset.y = mousePos.y - afterZoomScreenPos.y;
+
+				m_ViewOffset.x += zoomFixOffset.x;
+				m_ViewOffset.y += zoomFixOffset.y;
 			}
 		}
 
-		//Dragging
+		// Right-click dragging to pan the view
 		if (ImGui::IsMouseDragging(ImGuiMouseButton_Right))
 		{
 			if (!m_IsDragging)
@@ -200,12 +223,16 @@ namespace HTN::App
 				m_IsDragging = true;
 				m_LastMousePosition = ImGui::GetMousePos();
 			}
-			//Fix later, write your own vec2 class
-			ImVec2 delta = ImVec2(ImGui::GetMousePos().x - m_LastMousePosition.x, ImGui::GetMousePos().y - m_LastMousePosition.y);
+
+			ImVec2 currentMousePos = ImGui::GetMousePos();
+			ImVec2 delta;
+			delta.x = (currentMousePos.x - m_LastMousePosition.x);
+			delta.y = (currentMousePos.y - m_LastMousePosition.y);
+
 			m_ViewOffset.x += delta.x / m_Zoom;
 			m_ViewOffset.y += delta.y / m_Zoom;
 
-			m_LastMousePosition = ImGui::GetMousePos();
+			m_LastMousePosition = currentMousePos;
 		}
 		else
 		{
@@ -213,30 +240,136 @@ namespace HTN::App
 		}
 	}
 
-	void Application::AutoArrangeNodes() {
-		const float nodeWidth = 200.0f;
-		const float horizontalSpacing = 50.0f;
-		const float verticalSpacing = 200.0f;
-		const float canvasWidth = m_CanvasSize.x;
 
-		float currentY = 50.0f;
+	float Application::LayoutNodeRecursive(HTN::Core::Node* node, float depth)
+	{
+		if (!node) return 0.0f;
 
-		for (auto& [depth, nodePtrs] : m_Parser.depthMap) {
-			float totalWidth = (nodeWidth + horizontalSpacing) * nodePtrs.size() - horizontalSpacing;
-			float startX = (canvasWidth - totalWidth) / 2.0f;
-			float currentX = startX;
+		float subtreeWidth = 0.0f;
 
-			
-			for (auto& nodePtr : nodePtrs) {
-				nodePtr->position.x = currentX;
-				nodePtr->position.y = currentY;
+		if (!node->children.empty())
+		{
+			float totalChildWidth = 0.0f;
 
-				currentX += nodeWidth + horizontalSpacing;
+			for (auto& child : node->children)
+			{
+				float childSubtreeWidth = LayoutNodeRecursive(child, depth + 1);
+				totalChildWidth += childSubtreeWidth + m_HorizontalSpacing;
 			}
 
-			currentY += verticalSpacing;
+			if (totalChildWidth > 0.0f)
+				totalChildWidth -= m_HorizontalSpacing;
+
+			subtreeWidth = totalChildWidth;
+			float firstChildX = node->children.front()->position.x;
+			float lastChildX = node->children.back()->position.x;
+			node->position.x = (firstChildX + lastChildX) / 2.0f;
+		}
+		else
+		{
+			node->position.x = m_LayoutCursorX;
+			m_LayoutCursorX += m_NodeWidth + m_HorizontalSpacing;
+			subtreeWidth = m_NodeWidth;
+		}
+
+		node->position.y = depth * m_VerticalSpacing;
+		return subtreeWidth;
+	}
+
+
+	void Application::AutoArrangeNodes()
+	{
+		m_LayoutCursorX = 0.0f;
+		if (m_Parser.rootNode)
+		{
+			LayoutNodeRecursive(m_Parser.rootNode, 0);
 		}
 	}
+
+	void Application::DrawMinimap()
+	{
+		if (ImGui::Begin("Mini Map", nullptr,
+			ImGuiWindowFlags_NoCollapse |
+			ImGuiWindowFlags_NoScrollbar
+		))
+		{
+			ImGui::SliderFloat("Mini Map Zoom", &m_MinimapZoom, 0.02f, 0.3f, "%.2f");
+
+			ImVec2 contentSize = ImGui::GetContentRegionAvail();
+			ImVec2 minimapOffset = ImGui::GetCursorScreenPos();
+			ImDrawList* drawList = ImGui::GetWindowDrawList();
+
+			const float minimapScale = m_MinimapZoom;
+
+			// Scroll zoom with mouse position preserved
+			if (ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem))
+			{
+				float wheel = ImGui::GetIO().MouseWheel;
+				if (wheel != 0.0f)
+				{
+					ImVec2 mouse = ImGui::GetMousePos();
+					ImVec2 beforeZoomWorld;
+					beforeZoomWorld.x = (mouse.x - minimapOffset.x) / m_MinimapZoom;
+					beforeZoomWorld.y = (mouse.y - minimapOffset.y) / m_MinimapZoom;
+
+					m_MinimapZoom += wheel * 0.01f;
+					m_MinimapZoom = std::clamp(m_MinimapZoom, 0.02f, 0.3f);
+
+					ImVec2 afterZoomScreen;
+					afterZoomScreen.x = beforeZoomWorld.x * m_MinimapZoom + minimapOffset.x;
+					afterZoomScreen.y = beforeZoomWorld.y * m_MinimapZoom + minimapOffset.y;
+
+					ImVec2 offsetFix;
+					offsetFix.x = mouse.x - afterZoomScreen.x;
+					offsetFix.y = mouse.y - afterZoomScreen.y;
+
+					// You can store offsetFix here if you later implement panning
+				}
+			}
+
+			// Draw nodes
+			for (auto& [depth, nodePtrs] : m_Parser.depthMap)
+			{
+				for (auto& nodePtr : nodePtrs)
+				{
+					m_EditorUI.DrawNode(*nodePtr, minimapOffset, minimapScale, true);
+				}
+			}
+
+			// Draw links
+			for (const auto& link : m_Parser.links)
+			{
+				m_EditorUI.DrawLink(link, m_Parser.depthMap, minimapOffset, minimapScale, true);
+			}
+
+			// Viewport indicator
+			ImVec2 viewMin;
+			viewMin.x = minimapOffset.x + (-m_ViewOffset.x / m_Zoom) * minimapScale;
+			viewMin.y = minimapOffset.y + (-m_ViewOffset.y / m_Zoom) * minimapScale;
+
+			ImVec2 viewMax;
+			viewMax.x = viewMin.x + m_CanvasSize.x * minimapScale;
+			viewMax.y = viewMin.y + m_CanvasSize.y * minimapScale;
+
+			drawList->AddRect(viewMin, viewMax, IM_COL32(255, 255, 0, 255));
+
+			// Navigation click
+			ImGui::InvisibleButton("minimap_canvas", contentSize);
+			if (ImGui::IsItemClicked())
+			{
+				ImVec2 mouse = ImGui::GetMousePos();
+				ImVec2 local;
+				local.x = (mouse.x - minimapOffset.x) / m_MinimapZoom;
+				local.y = (mouse.y - minimapOffset.y) / m_MinimapZoom;
+
+				m_ViewOffset.x = -local.x * m_Zoom + m_CanvasSize.x / 2.0f;
+				m_ViewOffset.y = -local.y * m_Zoom + m_CanvasSize.y / 2.0f;
+			}
+		}
+		ImGui::End();
+	}
+
+
 
 	void Application::DrawTreeNode()
 	{
