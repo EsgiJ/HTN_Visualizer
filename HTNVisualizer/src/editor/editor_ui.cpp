@@ -69,9 +69,6 @@ namespace HTN::Editor
 		const float padding = 10.0f * Zoom;
 		const float pinPadding = 50.0f * Zoom;
 
-
-		ImVec2 textSize = ImGui::CalcTextSize(node.name.c_str());
-
 		ImVec2 scaledPos = ImVec2(node.position.x * Zoom, node.position.y * Zoom) + ViewOffset;
 		ImVec2 scaledSize = ImVec2(node.size.x * Zoom, node.size.y * Zoom);
 
@@ -147,9 +144,10 @@ namespace HTN::Editor
 			2.0f
 		);
 
-		// Draw Text (Centered)
-		std::string label = node.name;
-		//ImVec2 textSize = ImGui::CalcTextSize(label.c_str());
+		// Draw Text 
+		float labelAreaWidth = scaledSize.x - 20.0f;
+		std::string label = TruncateLabel(node.name, labelAreaWidth);
+		ImVec2 textSize = ImGui::CalcTextSize(label.c_str());
 
 		ImVec2 textPos = ImVec2(
 			scaledPos.x + (scaledSize.x - textSize.x) * 0.5f,
@@ -235,4 +233,23 @@ namespace HTN::Editor
 			linkColor
 		);
 	}
+
+	std::string EditorUI::TruncateLabel(const std::string& label, float maxWidth)
+	{
+		if (ImGui::CalcTextSize(label.c_str()).x <= maxWidth)
+			return label; 
+
+		std::string truncated = label;
+		while (!truncated.empty())
+		{
+			std::string test = truncated + "...";
+			ImVec2 size = ImGui::CalcTextSize(test.c_str());
+			if (size.x <= maxWidth)
+				return test;
+			truncated.pop_back();
+		}
+		return "...";
+	}
+
+
 }
