@@ -4,6 +4,10 @@
 #include <algorithm>
 #include <iostream>
 #include <sstream>
+#include <windows.h>
+#include <string>
+#include <array>
+#include <memory>
 
 #include "htn/editor/editor_ui.h"
 #include "htn/editor/imgui_utils.h"
@@ -67,26 +71,24 @@ namespace HTN::App
 				ImGuiWindowFlags_NoScrollbar |
 				ImGuiWindowFlags_NoScrollWithMouse);
 
-
-			ImGui::InvisibleButton("canvas", m_CanvasSize,
-				ImGuiButtonFlags_MouseButtonLeft |
-				ImGuiButtonFlags_MouseButtonRight | 
-				ImGuiButtonFlags_MouseButtonMiddle
-			);
-
 			// Canvas setup
-			ImVec2 m_CanvasSize = ImGui::GetContentRegionAvail();
+			m_CanvasSize = ImGui::GetContentRegionAvail();
 			if (m_CanvasSize.x <= 0 || m_CanvasSize.y <= 0) {
-				m_CanvasSize = ImVec2(1920, 1080); // Fallback size
+				m_CanvasSize = ImVec2(1920, 1080); // fallback
 			}
-			ImVec2 m_CanvasPosition = ImGui::GetCursorScreenPos();
+
+			if (m_CanvasSize.x > 0.0f && m_CanvasSize.y > 0.0f)
+			{
+				ImGui::InvisibleButton("canvas", m_CanvasSize,
+					ImGuiButtonFlags_MouseButtonLeft |
+					ImGuiButtonFlags_MouseButtonRight |
+					ImGuiButtonFlags_MouseButtonMiddle);
+			}
+
+			m_CanvasPosition = ImGui::GetCursorScreenPos();
 
 			ImGui::SetCursorPos(ImVec2(0, 0));
 			ImGui::SetWindowFontScale(m_Zoom);
-			/*ImGui::GetWindowDrawList()->PushClipRect(
-				ImGui::GetCursorScreenPos(),
-				ImVec2(ImGui::GetCursorScreenPos().x + m_CanvasSize.x, ImGui::GetCursorScreenPos().y + m_CanvasSize.y)
-			);*/
 
 			// Grid drawing
 			m_EditorUI.DrawGrid(m_CanvasSize, m_ViewOffset, m_Zoom);
@@ -103,7 +105,6 @@ namespace HTN::App
 				for (auto& nodePtr: nodePtrs)
 				{
 					m_EditorUI.DrawNode(*nodePtr, m_ViewOffset, m_Zoom, false);
-					//m_EditorUI.HandleNodeInteraction(nodePtr, m_ViewOffset, m_SelectedNodes);
 				}
 			}
 
@@ -117,17 +118,20 @@ namespace HTN::App
 			GetSelectedNode();
 			DrawNodeProperties();
 
-			//ImGui::GetWindowDrawList()->PopClipRect();
 			ImGui::End();
 
 			// Rendering
 			ImGui::Render();
-			int display_w, display_h;
+			int display_w = 0, display_h = 0;
 			glfwGetFramebufferSize(m_Window, &display_w, &display_h);
-			glViewport(0, 0, display_w, display_h);
-			glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-			glClear(GL_COLOR_BUFFER_BIT);
-			ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+			if (display_w > 0 && display_h > 0)
+			{
+				glViewport(0, 0, display_w, display_h);
+				glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+				glClear(GL_COLOR_BUFFER_BIT);
+				ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+			}
 
 			// Multi-viewport support
 			if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
@@ -354,19 +358,23 @@ namespace HTN::App
 			drawList->AddRect(viewMin, viewMax, IM_COL32(255, 255, 0, 255));
 
 			// Navigation click
-			ImGui::InvisibleButton("minimap_canvas", contentSize);
-			if (ImGui::IsItemClicked())
+			if (contentSize.x > 0.0f && contentSize.y > 0.0f)
 			{
-				ImVec2 mouse = ImGui::GetMousePos();
-				ImVec2 local;
-				local.x = (mouse.x - minimapOffset.x) / m_MinimapZoom;
-				local.y = (mouse.y - minimapOffset.y) / m_MinimapZoom;
+				ImGui::InvisibleButton("minimap_canvas", contentSize);
 
-				m_ViewOffset.x = -local.x * m_Zoom + m_CanvasSize.x / 2.0f;
-				m_ViewOffset.y = -local.y * m_Zoom + m_CanvasSize.y / 2.0f;
+				if (ImGui::IsItemClicked())
+				{
+					ImVec2 mouse = ImGui::GetMousePos();
+					ImVec2 local;
+					local.x = (mouse.x - minimapOffset.x) / m_MinimapZoom;
+					local.y = (mouse.y - minimapOffset.y) / m_MinimapZoom;
+
+					m_ViewOffset.x = -local.x * m_Zoom + m_CanvasSize.x / 2.0f;
+					m_ViewOffset.y = -local.y * m_Zoom + m_CanvasSize.y / 2.0f;
+				}
 			}
+			ImGui::End();
 		}
-		ImGui::End();
 	}
 
 
@@ -379,7 +387,7 @@ namespace HTN::App
 			ImGui::Text("Search:");
 			ImGui::SameLine();
 			ImGui::InputText("##NodeSearch", m_NodeSearchBuffer, IM_ARRAYSIZE(m_NodeSearchBuffer));
-			HTN:Core::Node* rootNode = m_Parser.rootNode;
+			HTN::Core::Node* rootNode = m_Parser.rootNode;
 			DrawTreeNodeRecursive(rootNode);
 			ImGui::End();
 		}
@@ -404,6 +412,11 @@ namespace HTN::App
 		if (ImGui::SmallButton(ss.str().c_str()))
 		{
 			FocusNode(node);
+		}
+		ImGui::SameLine();
+		if (ImGui::SmallButton("Open in File"))
+		{
+			OpenFileInVisualStudio("C:\\GameProjects\\HTN_Visualizer\\HTNVisualizer\\src\\core\\htn_parser.cpp", 42);
 		}
 
 		if (isOpen)
@@ -536,5 +549,46 @@ namespace HTN::App
 		std::cout << resourcePath.string();
 		return resourcePath.string();
 	}
+
+	std::string Application::GetDevenvPath()
+	{
+		std::string vswherePath = GetResourcePath("tools/vswhere.exe");
+		std::string command = "\"" + vswherePath + "\" -latest -products * -find **\\devenv.exe";
+
+		std::array<char, 512> buffer{};
+		std::string result;
+
+		std::unique_ptr<FILE, decltype(&_pclose)> pipe(_popen(command.c_str(), "r"), _pclose);
+		if (!pipe) return "";
+
+		while (fgets(buffer.data(), buffer.size(), pipe.get()) != nullptr)
+			result += buffer.data();
+
+		// Remove newline characters
+		result.erase(std::remove(result.begin(), result.end(), '\n'), result.end());
+		result.erase(std::remove(result.begin(), result.end(), '\r'), result.end());
+
+		return result;
+	}
+
+
+	void Application::OpenFileInVisualStudio(const std::string& filePath, int lineNumber)
+	{
+		std::string devenv = GetDevenvPath();
+		if (devenv.empty())
+		{
+			MessageBoxA(NULL, "Visual Studio not found via vswhere.", "Error", MB_OK | MB_ICONERROR);
+			return;
+		}
+
+		// Use only /edit to avoid duplicate VS instances
+		std::string args = "/edit \"" + filePath + "\"";
+
+		ShellExecuteA(NULL, "open", devenv.c_str(), args.c_str(), NULL, SW_SHOWDEFAULT);
+
+		// Optional: Notify user to scroll to line manually
+		std::string info = "Opened " + filePath + ". Please navigate to line " + std::to_string(lineNumber) + ".";
+	}
+
 }
 

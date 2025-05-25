@@ -30,6 +30,8 @@ namespace HTN::App
 		bool IsSearchMatch(const std::string& nodeName) const;
 		bool HasMatchingChildRecursive(const HTN::Core::Node* node) const;
 		std::string GetResourcePath(const std::string& resourceFile);
+		std::string GetDevenvPath();
+		void OpenFileInVisualStudio(const std::string& filePath, int lineNumber);
 
 		GLFWwindow* m_Window = nullptr;
 		HTN::Core::HTNParser m_Parser;
