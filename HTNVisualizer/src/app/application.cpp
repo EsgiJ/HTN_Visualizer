@@ -416,7 +416,7 @@ namespace HTN::App
 		ImGui::SameLine();
 		if (ImGui::SmallButton("Open in File"))
 		{
-			OpenFileInVisualStudio("C:\\GameProjects\\HTN_Visualizer\\HTNVisualizer\\src\\core\\htn_parser.cpp", 42);
+			OpenFileInVisualStudio("C:\\GameProjects\\HTN_Visualizer\\HTNVisualizer\\src\\app\\application.cpp", 42);
 		}
 
 		if (isOpen)
@@ -589,6 +589,5 @@ namespace HTN::App
 		// Optional: Notify user to scroll to line manually
 		std::string info = "Opened " + filePath + ". Please navigate to line " + std::to_string(lineNumber) + ".";
 	}
-
 }
 
