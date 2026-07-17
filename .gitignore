@@ -43,7 +43,6 @@ Generated/
 Intermediate/
 
 # === ASSET FILES ===
-*.png
 *.wav
 *.ttf
 *.ogg
