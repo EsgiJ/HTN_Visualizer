@@ -10,10 +10,10 @@ HTN is a planning model widely used in game AI, where an agent's high-level goal
 
 ![HTN Visualizer Screenshot](./htn-visualizer-screenshot.png)
 
-- **Node Hierarchy** — a searchable list view of the full tree, from compound tasks (e.g. `Exploration`, `Combat`, `ResourceCollection`, `SupportAlly`) down to primitive tasks (e.g. `ScanArea`, `FireWeapon`, `LocateResource`). Every node has `Open in File` to jump straight to its source, and `Focus` to jump to it on the canvas.
-- **Visual Node Graph** — task decomposition relationships rendered in real time on a draggable node canvas, with parent-child links drawn as arrows.
-- **Node Properties Panel** — live inspection of a selected task's name, type, and custom parameters (e.g. `EngagementRange: 300.0` on the `Combat` task).
-- **Mini Map** — zoomable overview for fast navigation on larger trees.
+- **Node Hierarchy** - a searchable list view of the full tree, from compound tasks (e.g. `Exploration`, `Combat`, `ResourceCollection`, `SupportAlly`) down to primitive tasks (e.g. `ScanArea`, `FireWeapon`, `LocateResource`). Every node has `Open in File` to jump straight to its source, and `Focus` to jump to it on the canvas.
+- **Visual Node Graph** - task decomposition relationships rendered in real time on a draggable node canvas, with parent-child links drawn as arrows.
+- **Node Properties Panel** - live inspection of a selected task's name, type, and custom parameters (e.g. `EngagementRange: 300.0` on the `Combat` task).
+- **Mini Map** - zoomable overview for fast navigation on larger trees.
 
 ## Why I built it
 
