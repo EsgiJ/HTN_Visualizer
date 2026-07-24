@@ -15,6 +15,14 @@ HTN is a planning model widely used in game AI, where an agent's high-level goal
 - **Node Properties Panel** - live inspection of a selected task's name, type, and custom parameters (e.g. `EngagementRange: 300.0` on the `Combat` task).
 - **Mini Map** - zoomable overview for fast navigation on larger trees.
 
+## Running it
+
+The tool starts with no tree loaded. To see it in action:
+
+**File > Open** → `resources/behavior.xml`
+
+That sample tree ships with the project. It has a root task decomposing into `Exploration`, `Combat`, `ResourceCollection` and `SupportAlly`, each breaking down further into primitive tasks, which is enough to exercise every panel.
+
 ## Why I built it
 
 At IO Interactive, our AI behavior definitions lived in an in-house DSL built almost entirely out of macros and strings. That meant AI programmers had no symbol navigation in the IDE, finding a specific task in a large tree meant text-searching through it by hand. I built a proof-of-concept visualizer there to make that tree browsable and debuggable at a glance, with the long-term idea of growing it into something closer to Unreal Engine's Behavior Tree editor. Eventually letting you author and create tasks directly from the editor, not just inspect them.
@@ -31,7 +39,7 @@ HTNVisualizer/
   include/htn/xmlgenerator/  XML serialization
   src/                       matching implementation files
   extern/                    third-party libraries
-  resources/                 fonts, icons, and a sample behaviour.xml
+  resources/                 fonts, icons, and a sample behavior.xml
 ```
 
 ## Tech
@@ -46,13 +54,13 @@ HTNVisualizer/
 Requires CMake 3.15+ and a C++17 compiler. Currently Windows-only, as the project links directly against `opengl32`.
 
 ```bash
-git clone https://github.com/EsgiJ/HTN_Visualizer.git
+git clone --recursive https://github.com/EsgiJ/HTN_Visualizer.git
 cd HTN_Visualizer/HTNVisualizer
 cmake -B build -S .
 cmake --build build --config Release
 ```
 
-All third-party dependencies are vendored under `extern/`, so no extra setup step is needed.
+Third-party dependencies are git submodules under `extern/`, so `--recursive` is required. If you have already cloned without it, run `git submodule update --init --recursive`.
 
 ## Third-party libraries
 
