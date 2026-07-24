@@ -1,6 +1,7 @@
 [submodule "HTNVisualizer/extern/imgui"]
 	path = HTNVisualizer/extern/imgui
 	url = https://github.com/ocornut/imgui.git
+	branch = docking
 [submodule "HTNVisualizer/extern/glfw"]
 	path = HTNVisualizer/extern/glfw
 	url = https://github.com/glfw/glfw.git

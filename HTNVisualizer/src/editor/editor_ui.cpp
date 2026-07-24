@@ -1,8 +1,6 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 
 #include "htn/core/htn_model.h"
-#include <imgui_extra_math.h>
-#include <imgui_extra_math.inl>
 #include <iostream>
 #include <algorithm>
 #include "htn/editor/editor_ui.h"
