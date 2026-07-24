@@ -7,3 +7,6 @@
 [submodule "HTNVisualizer/extern/tinyxml2"]
 	path = HTNVisualizer/extern/tinyxml2
 	url = https://github.com/leethomason/tinyxml2.git
+[submodule "HTNVisualizer/extern/IconFontCppHeaders"]
+	path = HTNVisualizer/extern/IconFontCppHeaders
+	url = https://github.com/juliettef/IconFontCppHeaders.git
