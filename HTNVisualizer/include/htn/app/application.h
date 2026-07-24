@@ -32,6 +32,7 @@ namespace HTN::App
 		std::string GetResourcePath(const std::string& resourceFile);
 		std::string GetDevenvPath();
 		void OpenFileInVisualStudio(const std::string& filePath, int lineNumber);
+		void OpenBehaviorFile();
 
 		GLFWwindow* m_Window = nullptr;
 		HTN::Core::HTNParser m_Parser;

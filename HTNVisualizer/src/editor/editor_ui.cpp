@@ -5,6 +5,7 @@
 #include <algorithm>
 #include "htn/editor/editor_ui.h"
 #include "htn/editor/theme_manager.h"
+#include "htn/editor/imgui_helpers.h"
 
 namespace HTN::Editor
 {

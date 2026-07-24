@@ -8,6 +8,8 @@
 #include <string>
 #include <array>
 #include <memory>
+#include <windows.h>
+#include <commdlg.h>
 
 #include "htn/editor/editor_ui.h"
 #include "htn/editor/imgui_utils.h"
@@ -157,7 +159,10 @@ namespace HTN::App
 	{
 		if (ImGui::BeginMainMenuBar()) {
 			if (ImGui::BeginMenu("File")) {
-				if (ImGui::MenuItem("Open..", "Ctrl+O")) { /* Open file */ }
+				if (ImGui::MenuItem("Open..", "Ctrl+O")) 
+				{ 
+					OpenBehaviorFile();
+				}
 				if (ImGui::MenuItem("Save", "Ctrl+S")) { /* Save file */ }
 				ImGui::EndMenu();
 			}
@@ -571,7 +576,6 @@ namespace HTN::App
 		return result;
 	}
 
-
 	void Application::OpenFileInVisualStudio(const std::string& filePath, int lineNumber)
 	{
 		std::string devenv = GetDevenvPath();
@@ -588,6 +592,33 @@ namespace HTN::App
 
 		// Optional: Notify user to scroll to line manually
 		std::string info = "Opened " + filePath + ". Please navigate to line " + std::to_string(lineNumber) + ".";
+	}
+
+	void HTN::App::Application::OpenBehaviorFile()
+	{
+		OPENFILENAMEA ofn;
+		CHAR szFile[260] = { 0 };
+
+		ZeroMemory(&ofn, sizeof(OPENFILENAMEA));
+		ofn.lStructSize = sizeof(OPENFILENAMEA);
+		ofn.hwndOwner = NULL;
+		ofn.lpstrFile = szFile;
+		ofn.nMaxFile = sizeof(szFile);
+		ofn.lpstrFilter = "XML Files (*.xml)\0*.xml\0All Files (*.*)\0*.*\0";
+		ofn.nFilterIndex = 1;
+		ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
+
+		if (GetOpenFileNameA(&ofn) == TRUE)
+		{
+			std::string filePath = ofn.lpstrFile;
+
+			m_Parser.LoadFromXML(filePath.c_str());
+
+			m_FirstFrame = true; 
+			m_Zoom = 1.0f;
+			m_ViewOffset = ImVec2(0, 0);
+			m_SelectedNode = nullptr;
+		}
 	}
 }
 
