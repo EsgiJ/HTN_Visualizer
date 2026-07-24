@@ -1,6 +1,9 @@
-[submodule "extern/imnodes"]
-	path = HTNVisualizer/extern/imnodes
-	url = https://github.com/Nelarius/imnodes.git
-[submodule "HTNVisualizer/extern/extern/IconFontCppHeaders"]
-	path = HTNVisualizer/extern/extern/IconFontCppHeaders
-	url = https://github.com/juliettef/IconFontCppHeaders
+[submodule "HTNVisualizer/extern/imgui"]
+	path = HTNVisualizer/extern/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "HTNVisualizer/extern/glfw"]
+	path = HTNVisualizer/extern/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "HTNVisualizer/extern/tinyxml2"]
+	path = HTNVisualizer/extern/tinyxml2
+	url = https://github.com/leethomason/tinyxml2.git
